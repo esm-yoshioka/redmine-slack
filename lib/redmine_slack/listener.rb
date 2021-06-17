@@ -86,7 +86,16 @@ class SlackListener < Redmine::Hook::Listener
 		return unless channel and url and issue.save
 		return if issue.is_private?
 
-		msg = "[#{escape issue.project}] #{escape journal.user.to_s} updated <#{object_url issue}|#{escape issue}>"
+        if issue.assigned_to
+            notice_slackId = issue.assigned_to.custom_field_values.find{ |field| field.custom_field.name == 'Notice Slack ID' }
+            if (issue.assigned_to_id != journal.user_id) and (notice_slackId.to_s != "") 
+                msg = "[#{escape issue.project}] <@#{notice_slackId}> Updated by #{escape journal.user.to_s} <#{object_url issue}|#{escape issue}>"
+            else
+                msg = "[#{escape issue.project}] Updated by #{escape journal.user.to_s} <#{object_url issue}|#{escape issue}>"
+            end
+        else
+            msg = "[#{escape issue.project}] #{escape journal.user.to_s} updated <#{object_url issue}|#{escape issue}>"
+        end
 
 		repository = changeset.repository
 
@@ -131,7 +140,7 @@ class SlackListener < Redmine::Hook::Listener
 		user = page.content.author
 		project_url = "<#{object_url project}|#{escape project}>"
 		page_url = "<#{object_url page}|#{page.title}>"
-		comment = "[#{project_url}] #{page_url} updated by *#{user}*"
+		comment = "[#{project_url}] Wiki: #{page_url} updated by *#{user}*"
 		if page.content.version > 1
 			comment << " [<#{object_url page}/diff?version=#{page.content.version}|difference>]"
 		end
