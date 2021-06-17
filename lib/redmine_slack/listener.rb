@@ -57,7 +57,16 @@ class SlackListener < Redmine::Hook::Listener
 		return if issue.is_private?
 		return if journal.private_notes?
 
-		msg = "[#{escape issue.project}] #{escape journal.user.to_s} updated <#{object_url issue}|#{escape issue}>#{mentions journal.notes}"
+        if issue.assigned_to
+            notice_slackId = issue.assigned_to.custom_field_values.find{ |field| field.custom_field.name == 'Notice Slack ID' }
+            if (issue.assigned_to_id != journal.user_id) and (notice_slackId.to_s != "") 
+                msg = "[#{escape issue.project}] <@#{notice_slackId}> Updated by #{escape journal.user.to_s} <#{object_url issue}|#{escape issue}>#{mentions issue.notes}"
+            else
+                msg = "[#{escape issue.project}] Updated by #{escape journal.user.to_s} <#{object_url issue}|#{escape issue}>#{mentions issue.notes}"
+            end
+        else
+            msg = "[#{escape issue.project}] #{escape journal.user.to_s} updated <#{object_url issue}|#{escape issue}>#{mentions issue.notes}"
+        end
 
 		attachment = {}
 		attachment[:text] = escape journal.notes if journal.notes
