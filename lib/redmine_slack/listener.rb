@@ -36,7 +36,11 @@ class Listener < Redmine::Hook::Listener
 			:title => I18n.t("field_assigned_to"),
 			:value => escape(issue.assigned_to.to_s),
 			:short => true
-		}]
+		}, {
+			:title => I18n.t("field_fixed_version"),
+			:value => escape(issue.fixed_version.to_s),
+			:short => true
+		},]
 
 		attachment[:fields] << {
 			:title => I18n.t("field_watcher"),
@@ -72,6 +76,19 @@ class Listener < Redmine::Hook::Listener
 		attachment = {}
 		attachment[:text] = escape journal.notes if journal.notes
 		attachment[:fields] = journal.details.map { |d| detail_to_field d }
+
+        already_included = journal.details.any? do |d|
+          (d.prop_key == 'fixed_version_id' || d.prop_key == 'fixed_version') &&
+            (d.property == 'attr' || d.property == 'cf')
+        end
+
+        if issue.fixed_version && !already_included
+          attachment[:fields] << {
+			:title => I18n.t("field_fixed_version"),
+			:value => escape(issue.fixed_version.to_s),
+			:short => true
+          }
+        end
 
 		speak msg, channel, attachment, url
 	end
